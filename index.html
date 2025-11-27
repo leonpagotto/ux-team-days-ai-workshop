@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Prototyping Workshop - Team Days December 2025</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto IKEA', 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #FFFFFF;
+            color: #111111;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .global-header {
+            position: fixed;
+            top: 1.5rem;
+            left: 2rem;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            pointer-events: none;
+        }
+
+        .workshop-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #767676;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-left: 1px solid #CCCCCC;
+            padding-left: 1rem;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem 2rem;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #FFFFFF;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        h1 { font-size: 3rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700; color: #111111; }
+        h2 { font-size: 2.2rem; margin-bottom: 1.2rem; color: #111111; font-weight: 700; }
+        h3 { font-size: 1.4rem; margin-bottom: 0.5rem; color: #111111; font-weight: 700; }
+        p { font-size: 1.1rem; line-height: 1.5; max-width: 900px; text-align: center; color: #484848; }
+        .subtitle { font-size: 1.3rem; color: #484848; text-align: center; margin-bottom: 1rem; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 1000px; margin: 1.5rem auto; width: 100%; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .box {
+            background: #F5F5F5;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .box h3 { color: #0058A3; margin-bottom: 0.75rem; }
+
+        .blue-bg { background: #0058A3; color: #FFFFFF; }
+        .blue-bg h1, .blue-bg h2, .blue-bg h3, .blue-bg p { color: #FFFFFF; }
+        .yellow-bg { background: #FBD914; color: #111111; }
+        .green-bg { background: #00853F; color: #FFFFFF; }
+        .green-bg h1, .green-bg h2, .green-bg h3, .green-bg p { color: #FFFFFF; }
+
+        .timeline { display: flex; justify-content: space-between; max-width: 1200px; margin: 1.5rem auto; gap: 0.75rem; flex-wrap: wrap; }
+        .phase { flex: 1; min-width: 120px; background: #F5F5F5; padding: 1rem; border-radius: 8px; text-align: center; }
+        .phase h3 { color: #0058A3; margin-bottom: 0.5rem; font-size: 1rem; }
+        .phase .duration { font-size: 0.85rem; color: #767676; margin-bottom: 0.5rem; }
+        .phase.highlight { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); border: 2px solid #00853F; }
+        .phase.pause { background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border: 2px solid #F57C00; }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 100;
+            background: #FFFFFF;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        button {
+            background: #0058A3;
+            color: #FFFFFF;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        button:hover { background: #004F93; transform: scale(1.1); }
+        button:disabled { background: #F5F5F5; color: #CCCCCC; cursor: not-allowed; }
+
+        .slide-counter { font-size: 0.9rem; color: #111111; font-weight: 600; min-width: 60px; text-align: center; }
+
+        .prompt-example {
+            background: #F5F5F5;
+            padding: 1.25rem;
+            border-radius: 8px;
+            border-left: 4px solid #0058A3;
+            margin: 1rem auto;
+            max-width: 800px;
+            text-align: left;
+            font-family: 'Monaco', monospace;
+            font-size: 0.95rem;
+        }
+        .good-prompt { border-left-color: #00853F; }
+        .bad-prompt { border-left-color: #E00751; }
+
+        .track-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1000px; margin: 1.5rem auto; }
+        .track-box { background: #F5F5F5; padding: 1.5rem; border-radius: 8px; }
+
+        ul { list-style: none; max-width: 800px; margin: 1rem auto; }
+        li { font-size: 1.1rem; margin: 0.75rem 0; padding-left: 1.5rem; position: relative; color: #484848; }
+        li:before { content: "→"; position: absolute; left: 0; color: #0058A3; font-weight: bold; }
+
+        /* PAUSE slide special styling */
+        .pause-slide {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+        }
+        .pause-slide h1 {
+            font-size: 4rem;
+            color: #F57C00;
+        }
+        .pause-timer {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #F57C00;
+            margin: 1rem 0;
+        }
+
+        /* Breathing animation for pause slides */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .breathing {
+            animation: breathe 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="global-header">
+        <div style="font-weight: 900; font-size: 1.8rem; color: #0058A3; letter-spacing: -0.05em;">IKEA</div>
+        <div class="workshop-title">AI-Powered Prototyping Workshop</div>
+    </div>
+
+    <div class="presentation-container">
+
+        <!-- ======================= -->
+        <!-- PART 1: QUICK HOOK (5 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 1: Title - HIGH ENERGY -->
+        <div class="slide active blue-bg">
+            <div style="font-size: 5rem; margin-bottom: 1rem;" class="breathing">🚀</div>
+            <h1 style="font-size: 2.8rem;">AI-Powered Prototyping</h1>
+            <p style="font-size: 1.5rem; margin: 1rem 0; opacity: 0.9;">From Idea to Live URL in 2 Hours</p>
+            <div style="background: #FBD914; padding: 1rem 2rem; border-radius: 40px; margin-top: 1.5rem;">
+                <p style="font-size: 1.3rem; font-weight: 700; color: #111111; margin: 0;">No coding needed. AI does the work. 💪</p>
+            </div>
+            <p style="font-size: 1rem; margin-top: 2rem; opacity: 0.7;">Team Days • December 2025 • Facilitated by Leo & Chris</p>
+        </div>
+
+        <!-- SLIDE 2: What You'll Leave With (The Promise) -->
+        <div class="slide">
+            <h2>In 2 Hours, You'll Have...</h2>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; max-width: 1000px; margin: 2rem 0;">
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 2rem 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">✅</div>
+                    <h3 style="color: #00853F; font-size: 1.2rem;">A Working<br>Prototype</h3>
+                </div>
+                <div style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 2rem 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🌐</div>
+                    <h3 style="color: #0058A3; font-size: 1.2rem;">A Public<br>URL</h3>
+                </div>
+                <div style="background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); padding: 2rem 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🧠</div>
+                    <h3 style="color: #6A1B9A; font-size: 1.2rem;">New<br>Skills</h3>
+                </div>
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 2rem 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">💪</div>
+                    <h3 style="color: #F57C00; font-size: 1.2rem;">Confidence<br>to Build</h3>
+                </div>
+            </div>
+
+            <div style="background: #111111; padding: 1.25rem 2.5rem; border-radius: 40px; margin-top: 1rem;">
+                <p style="font-size: 1.3rem; font-weight: 600; color: #FFFFFF; margin: 0;">AI does the coding. You do the thinking. 🧠</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Why Are We Doing This? -->
+        <div class="slide">
+            <h2>Why Are We Doing This?</h2>
+
+            <div class="grid" style="max-width: 1000px; margin: 2rem 0;">
+                <div class="box" style="background: linear-gradient(135deg, #E8F5E9 0%, #F5F5F5 100%);">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">📈</div>
+                    <h3>Expand Your Toolkit</h3>
+                    <p>Figma is amazing! Let's add <strong>complementary methods</strong></p>
+                </div>
+                <div class="box" style="background: linear-gradient(135deg, #E3F2FD 0%, #F5F5F5 100%);">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">💻</div>
+                    <h3>Production-Ready</h3>
+                    <p>Build <strong>functional prototypes</strong> that work like real apps</p>
+                </div>
+                <div class="box" style="background: linear-gradient(135deg, #FFF3E0 0%, #F5F5F5 100%);">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔧</div>
+                    <h3>Solve Real Problems</h3>
+                    <p>Work on <strong>actual challenges</strong> from your daily work</p>
+                </div>
+                <div class="box" style="background: linear-gradient(135deg, #F3E5F5 0%, #F5F5F5 100%);">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">✨</div>
+                    <h3>Learn by Doing</h3>
+                    <p>Hands-on experience. <strong>No pressure, just exploration.</strong></p>
+                </div>
+            </div>
+
+            <div style="background: #FBD914; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.1rem; font-weight: 600; color: #111111; margin: 0;">This is something I've been experimenting with — I'd love your feedback! 🙏</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- THE MINDSET -->
+        <!-- ======================= -->
+
+        <!-- SLIDE: The Right Mindset -->
+        <div class="slide">
+            <h2>The Right Mindset</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1000px; margin: 2rem 0;">
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 2rem; border-radius: 12px; border-left: 5px solid #00853F;">
+                    <h3 style="color: #00853F; font-size: 1.5rem; margin-bottom: 1rem;">✅ We're NOT replacing engineers</h3>
+                    <p style="font-size: 1.1rem; text-align: left;">We're making ideas more accessible. Quick prototypes to communicate concepts and solve immediate problems.</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 2rem; border-radius: 12px; border-left: 5px solid #F57C00;">
+                    <h3 style="color: #F57C00; font-size: 1.5rem; margin-bottom: 1rem;">🔄 Build, Learn, Move On</h3>
+                    <p style="font-size: 1.1rem; text-align: left;">Stay detached. The learning is the value, not perfection. Sometimes temporary is perfect.</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; max-width: 1000px;">
+                <div style="background: #F5F5F5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <p style="font-size: 1rem; margin: 0;">✨ Not about perfection</p>
+                </div>
+                <div style="background: #F5F5F5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <p style="font-size: 1rem; margin: 0;">⚠️ Expect errors</p>
+                </div>
+                <div style="background: #F5F5F5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <p style="font-size: 1rem; margin: 0;">🧪 Experiment freely</p>
+                </div>
+                <div style="background: #F5F5F5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <p style="font-size: 1rem; margin: 0;">🤝 Help each other</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- MISSION BRIEFING -->
+        <!-- ======================= -->
+
+        <!-- SLIDE: Mission Briefing -->
+        <div class="slide blue-bg">
+            <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎯 Mission Briefing</h2>
+            <p class="subtitle" style="color: rgba(255,255,255,0.9); font-size: 1.3rem; margin-bottom: 1.5rem;">What you'll build & how</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1000px; margin: 1rem 0;">
+                <!-- WHAT -->
+                <div style="background: rgba(255,255,255,0.15); padding: 1.75rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; text-align: center;">📦 What You'll Build</h3>
+                    <div style="text-align: left; font-size: 1.1rem; line-height: 1.8;">
+                        <p style="margin-bottom: 0.75rem;">✓ A <strong>working web tool</strong></p>
+                        <p style="margin-bottom: 0.75rem;">✓ With a <strong>live URL</strong> you can share</p>
+                        <p style="margin-bottom: 0.75rem;">✓ Solving a <strong>real problem</strong> you identified</p>
+                        <p>✓ In <strong>~60 minutes</strong> of build time</p>
+                    </div>
+                </div>
+
+                <!-- HOW -->
+                <div style="background: rgba(255,255,255,0.15); padding: 1.75rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; text-align: center;">⚡ How You'll Do It</h3>
+                    <div style="text-align: left; font-size: 1.1rem; line-height: 1.8;">
+                        <p style="margin-bottom: 0.75rem;"><strong>1.</strong> Agree on ONE idea as a team</p>
+                        <p style="margin-bottom: 0.75rem;"><strong>2.</strong> Write a detailed prompt together</p>
+                        <p style="margin-bottom: 0.75rem;"><strong>3.</strong> Generate code with AI tools</p>
+                        <p><strong>4.</strong> Iterate until it works → Deploy!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #FBD914; padding: 1rem 2.5rem; border-radius: 40px; margin-top: 1.5rem;">
+                <p style="font-size: 1.2rem; font-weight: 700; color: #111111; margin: 0;">💡 Keep it simple! One clear feature > many half-finished ones</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- TOOLS OVERVIEW -->
+        <!-- ======================= -->
+
+        <!-- SLIDE: Your AI Toolkit (consolidated) -->
+        <div class="slide">
+            <h2>Your AI Toolkit</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; max-width: 1100px; margin: 1.5rem 0;">
+                <!-- My AI Portal -->
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.5rem; border-radius: 12px; border-top: 4px solid #00853F;">
+                    <h3 style="color: #00853F; font-size: 1.3rem; margin-bottom: 0.75rem; text-align: center;">🔒 My AI Portal</h3>
+                    <p style="text-align: center; font-size: 0.95rem; margin-bottom: 0.75rem;">INGKA's safe AI tool</p>
+                    <div style="background: white; padding: 0.75rem; border-radius: 6px; text-align: center;">
+                        <p style="font-size: 0.9rem; margin: 0;">✓ Brainstorm ideas</p>
+                    </div>
+                    <div style="background: white; padding: 0.75rem; border-radius: 6px; text-align: center; margin-top: 0.5rem;">
+                        <p style="font-size: 0.9rem; margin: 0;">✓ Craft your prompt</p>
+                    </div>
+                </div>
+
+                <!-- Code Generation -->
+                <div style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 1.5rem; border-radius: 12px; border-top: 4px solid #0058A3;">
+                    <h3 style="color: #0058A3; font-size: 1.3rem; margin-bottom: 0.75rem; text-align: center;">⚡ Code Generation</h3>
+                    <p style="text-align: center; font-size: 0.95rem; margin-bottom: 0.75rem;">Turn prompts into code</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div style="background: white; padding: 0.5rem; border-radius: 6px; text-align: center;">
+                            <p style="font-size: 0.85rem; margin: 0; font-weight: 600;">AI Studio</p>
+                        </div>
+                        <div style="background: white; padding: 0.5rem; border-radius: 6px; text-align: center;">
+                            <p style="font-size: 0.85rem; margin: 0; font-weight: 600;">v0</p>
+                        </div>
+                        <div style="background: white; padding: 0.5rem; border-radius: 6px; text-align: center;">
+                            <p style="font-size: 0.85rem; margin: 0; font-weight: 600;">Replit</p>
+                        </div>
+                        <div style="background: white; padding: 0.5rem; border-radius: 6px; text-align: center;">
+                            <p style="font-size: 0.85rem; margin: 0; font-weight: 600;">Bolt</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deploy -->
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 1.5rem; border-radius: 12px; border-top: 4px solid #F57C00;">
+                    <h3 style="color: #F57C00; font-size: 1.3rem; margin-bottom: 0.75rem; text-align: center;">🚀 Deploy</h3>
+                    <p style="text-align: center; font-size: 0.95rem; margin-bottom: 0.75rem;">Get your live URL</p>
+                    <div style="background: white; padding: 0.75rem; border-radius: 6px; text-align: center;">
+                        <p style="font-size: 0.9rem; margin: 0; font-weight: 600;">Vercel (easiest!)</p>
+                    </div>
+                    <div style="background: #E00751; padding: 0.75rem; border-radius: 6px; text-align: center; margin-top: 0.5rem;">
+                        <p style="font-size: 0.85rem; margin: 0; color: white; font-weight: 600;">⚠️ Create account now!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 40px; max-width: 700px;">
+                <p style="font-size: 1.1rem; margin: 0; text-align: center;"><strong>The Flow:</strong> My AI Portal → Code Generator → Deploy</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- PART 2: FORM TEAMS (5 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE: Skill Level Check -->
+        <div class="slide">
+            <h2>Quick Check: Where Are You?</h2>
+            <p class="subtitle">Raise your hand for your comfort level with AI tools</p>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1000px; margin: 2rem 0;">
+                <div style="background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); padding: 2rem; border-radius: 12px; text-align: center; border: 3px solid #E00751;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🔴</div>
+                    <h3 style="color: #E00751; font-size: 1.4rem; margin-bottom: 0.75rem;">New to This</h3>
+                    <p style="font-size: 1rem; color: #484848;">"I haven't really used AI for coding"</p>
+                    <p style="font-size: 0.9rem; color: #767676; margin-top: 0.75rem;">That's totally fine!</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%); padding: 2rem; border-radius: 12px; text-align: center; border: 3px solid #F57C00;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🟡</div>
+                    <h3 style="color: #F57C00; font-size: 1.4rem; margin-bottom: 0.75rem;">Experimenting</h3>
+                    <p style="font-size: 1rem; color: #484848;">"I've tried some things, want to learn more"</p>
+                    <p style="font-size: 0.9rem; color: #767676; margin-top: 0.75rem;">Great foundation!</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 2rem; border-radius: 12px; text-align: center; border: 3px solid #00853F;">
+                    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🟢</div>
+                    <h3 style="color: #00853F; font-size: 1.4rem; margin-bottom: 0.75rem;">Comfortable</h3>
+                    <p style="font-size: 1rem; color: #484848;">"I use these tools regularly"</p>
+                    <p style="font-size: 0.9rem; color: #767676; margin-top: 0.75rem;">You'll be a team guide!</p>
+                </div>
+            </div>
+
+            <div style="background: #111111; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.1rem; font-weight: 600; color: #FFFFFF; margin: 0;">Remember your color — we'll mix teams next! 🎨</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Stand Up & Form Teams -->
+        <div class="slide yellow-bg">
+            <div style="font-size: 5rem; margin-bottom: 1rem;">👋</div>
+            <h1 style="font-size: 3rem;">Form Mixed Teams!</h1>
+            <p style="font-size: 1.3rem; margin: 1rem 0;">Teams of 3-4 people with <strong>at least one 🟢 or 🟡</strong></p>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 900px; margin: 2rem 0;">
+                <div style="background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌍</div>
+                    <p style="font-weight: 600; margin: 0;">Mix locations</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
+                    <p style="font-weight: 600; margin: 0;">Mix skill levels</p>
+                    <p style="font-size: 0.85rem; margin-top: 0.25rem;">🔴 + 🟡 + 🟢</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎓</div>
+                    <p style="font-weight: 600; margin: 0;">🟢 = Team Guide</p>
+                    <p style="font-size: 0.85rem; margin-top: 0.25rem;">Help your teammates!</p>
+                </div>
+            </div>
+
+            <div style="background: #111111; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.2rem; font-weight: 600; color: #FFFFFF; margin: 0;">⏱️ You have 3 minutes! Stand up and find your team!</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- WORKFLOW & PROMPTS -->
+        <!-- ======================= -->
+
+        <!-- SLIDE: The Workflow -->
+        <div class="slide">
+            <h2>The 5-Step Workflow</h2>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; max-width: 1100px; margin: 2rem 0;">
+                <div style="flex: 1; background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">💡</div>
+                    <h3 style="color: #00853F; font-size: 1rem; margin-bottom: 0.25rem;">1. Ideate</h3>
+                    <p style="font-size: 0.85rem; color: #484848; margin: 0;">My AI Portal</p>
+                </div>
+                <div style="font-size: 1.5rem; color: #CCCCCC;">→</div>
+                <div style="flex: 1; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">✍️</div>
+                    <h3 style="color: #0058A3; font-size: 1rem; margin-bottom: 0.25rem;">2. Prompt</h3>
+                    <p style="font-size: 0.85rem; color: #484848; margin: 0;">Be specific!</p>
+                </div>
+                <div style="font-size: 1.5rem; color: #CCCCCC;">→</div>
+                <div style="flex: 1; background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">⚡</div>
+                    <h3 style="color: #6A1B9A; font-size: 1rem; margin-bottom: 0.25rem;">3. Generate</h3>
+                    <p style="font-size: 0.85rem; color: #484848; margin: 0;">AI writes code</p>
+                </div>
+                <div style="font-size: 1.5rem; color: #CCCCCC;">→</div>
+                <div style="flex: 1; background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">🔄</div>
+                    <h3 style="color: #F57C00; font-size: 1rem; margin-bottom: 0.25rem;">4. Iterate</h3>
+                    <p style="font-size: 0.85rem; color: #484848; margin: 0;">Test & refine</p>
+                </div>
+                <div style="font-size: 1.5rem; color: #CCCCCC;">→</div>
+                <div style="flex: 1; background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">🚀</div>
+                    <h3 style="color: #00853F; font-size: 1rem; margin-bottom: 0.25rem;">5. Deploy</h3>
+                    <p style="font-size: 0.85rem; color: #484848; margin: 0;">Get live URL</p>
+                </div>
+            </div>
+
+            <div style="background: #FBD914; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.1rem; font-weight: 600; color: #111111; margin: 0;">Same workflow I used to build Captain AI in 2 hours!</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Good Prompts -->
+        <div class="slide">
+            <h2>The Secret: Good Prompts</h2>
+
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3 style="color: #E00751; margin-bottom: 0.75rem;">❌ Vague = Bad</h3>
+                        <div class="prompt-example bad-prompt" style="font-size: 1.1rem;">
+                            "Create a tool to help with meetings"
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #00853F; margin-bottom: 0.75rem;">✅ Specific = Good</h3>
+                        <div class="prompt-example good-prompt" style="font-size: 0.9rem;">
+                            Create a meeting action tracker.<br><br>
+                            <strong>User:</strong> Design team<br>
+                            <strong>Features:</strong><br>
+                            • Add item: description, owner, due<br>
+                            • Mark complete (checkbox)<br>
+                            • Filter: all / pending / done<br><br>
+                            <strong>Design:</strong> IKEA blue, mobile-friendly
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 40px; margin-top: 1.5rem; max-width: 700px;">
+                <p style="font-size: 1.1rem; margin: 0;"><strong>Include:</strong> WHO it's for • WHAT it does • HOW it looks</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- PART 5: PICK YOUR CHALLENGE (8 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 8: Pick Your Challenge -->
+        <div class="slide">
+            <h2>Pick Your Challenge</h2>
+            <p class="subtitle">Everyone works on the same category — so we can compare results! 🎯</p>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 1000px; margin: 1.5rem 0;">
+                <div style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 1.75rem; border-radius: 12px; border: 3px solid #0058A3; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🧩</div>
+                    <h3 style="color: #0058A3; font-size: 1.3rem; margin-bottom: 0.5rem;">Design System Component</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">Table filters, date picker, status badges, form wizards</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 1.75rem; border-radius: 12px; border: 3px solid #F57C00; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📦</div>
+                    <h3 style="color: #F57C00; font-size: 1.3rem; margin-bottom: 0.5rem;">L&FM / SMS Related</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">RTT scanner, delivery tracker, shift planner</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.75rem; border-radius: 12px; border: 3px solid #00853F; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">👥</div>
+                    <h3 style="color: #00853F; font-size: 1.3rem; margin-bottom: 0.5rem;">Team / Productivity</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">Retro boards, icebreakers, capacity calculator, FICA finder</p>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #FBD914 0%, #F5A623 100%); padding: 1.25rem 2rem; border-radius: 40px; max-width: 800px;">
+                <p style="font-size: 1.15rem; font-weight: 600; color: #111111; margin: 0;">💡 Same brief → Different outcomes. See how far each team gets!</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- PLANNING PAUSE (20 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 11: PLANNING PAUSE -->
+        <div class="slide pause-slide">
+            <div style="font-size: 4rem; margin-bottom: 1rem;" class="breathing">⏸️</div>
+            <h1 style="font-size: 3rem; color: #F57C00;">Planning Time</h1>
+            <div class="pause-timer">20 min</div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 900px; margin: 1.5rem 0;">
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                    <h3 style="color: #111111; font-size: 1.1rem;">Discuss</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">What will you build?</p>
+                </div>
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✍️</div>
+                    <h3 style="color: #111111; font-size: 1.1rem;">Write Prompt</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">Be specific!</p>
+                </div>
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔧</div>
+                    <h3 style="color: #111111; font-size: 1.1rem;">Get Tools Ready</h3>
+                    <p style="font-size: 0.95rem; color: #484848;">Open AI Studio / v0</p>
+                </div>
+            </div>
+
+            <div style="background: #111111; padding: 1.25rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.2rem; font-weight: 600; color: #FFFFFF; margin: 0;">👋 Leo & Chris will visit each team to help!</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 12: Goals by Level -->
+        <div class="slide">
+            <h2>Your Role Based on Level</h2>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 1000px; margin: 2rem 0;">
+                <div style="background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); padding: 1.75rem; border-radius: 12px; border-top: 4px solid #E00751;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">🔴</div>
+                    <h3 style="color: #E00751; font-size: 1.2rem; margin-bottom: 0.75rem; text-align: center;">New to This</h3>
+                    <p style="font-size: 0.95rem; text-align: left; margin-bottom: 0.5rem;"><strong>Your goal:</strong> See something deploy!</p>
+                    <p style="font-size: 0.9rem; text-align: left; color: #484848;">Focus on ideas & prompts. Let 🟢 handle the code. Learn by watching!</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%); padding: 1.75rem; border-radius: 12px; border-top: 4px solid #F57C00;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">🟡</div>
+                    <h3 style="color: #F57C00; font-size: 1.2rem; margin-bottom: 0.75rem; text-align: center;">Experimenting</h3>
+                    <p style="font-size: 0.95rem; text-align: left; margin-bottom: 0.5rem;"><strong>Your goal:</strong> Build & iterate!</p>
+                    <p style="font-size: 0.9rem; text-align: left; color: #484848;">Write prompts, test code, fix bugs. Get hands-on with the tools.</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.75rem; border-radius: 12px; border-top: 4px solid #00853F;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">🟢</div>
+                    <h3 style="color: #00853F; font-size: 1.2rem; margin-bottom: 0.75rem; text-align: center;">Team Guide</h3>
+                    <p style="font-size: 0.95rem; text-align: left; margin-bottom: 0.5rem;"><strong>Your goal:</strong> Help your team succeed!</p>
+                    <p style="font-size: 0.9rem; text-align: left; color: #484848;">Drive the code, troubleshoot, teach as you go. Try VS Code + Copilot!</p>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 40px; max-width: 700px;">
+                <p style="font-size: 1.1rem; margin: 0; text-align: center;">Everyone contributes! Different roles, same goal: <strong>working prototype</strong> 🎯</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- SAFETY REMINDER (shown during planning) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 10: Safety Guidelines -->
+        <div class="slide">
+            <h2>⚠️ Quick Safety Note</h2>
+
+            <div class="track-comparison" style="max-width: 900px;">
+                <div class="track-box" style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); border: 3px solid #00853F;">
+                    <h3 style="color: #00853F; text-align: center; font-size: 1.4rem; margin-bottom: 1rem;">✅ My AI Portal (INGKA)</h3>
+                    <ul style="margin: 0;">
+                        <li style="color: #111111; padding-left: 1.5rem;">Share IKEA data freely</li>
+                        <li style="color: #111111; padding-left: 1.5rem;">Upload internal designs</li>
+                        <li style="color: #111111; padding-left: 1.5rem;">Mention products & teams</li>
+                    </ul>
+                </div>
+                <div class="track-box" style="background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); border: 3px solid #E00751;">
+                    <h3 style="color: #E00751; text-align: center; font-size: 1.4rem; margin-bottom: 1rem;">⚠️ External AI Tools</h3>
+                    <ul style="margin: 0;">
+                        <li style="color: #111111; padding-left: 1.5rem;">No IKEA confidential info</li>
+                        <li style="color: #111111; padding-left: 1.5rem;">Use generic terms</li>
+                        <li style="color: #111111; padding-left: 1.5rem;">When in doubt → My AI Portal</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 40px; margin-top: 1.5rem;">
+                <p style="font-size: 1.1rem; margin: 0;"><strong>Rule of thumb:</strong> Keep prompts generic in external tools. Save the details for My AI Portal.</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- BUILD TIME (35 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 11: Let's Build! -->
+        <div class="slide green-bg">
+            <div style="font-size: 5rem; margin-bottom: 1rem;" class="breathing">🛠️</div>
+            <h1 style="font-size: 3.5rem;">Build Time!</h1>
+            <div style="font-size: 4rem; font-weight: 900; margin: 1rem 0;">35 min</div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 800px; margin: 1.5rem 0;">
+                <div style="background: rgba(255,255,255,0.2); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <p style="font-size: 1.1rem; margin: 0;">1. Paste your prompt</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <p style="font-size: 1.1rem; margin: 0;">2. Generate & test</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                    <p style="font-size: 1.1rem; margin: 0;">3. Iterate & improve</p>
+                </div>
+            </div>
+
+            <div style="background: #FBD914; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.2rem; font-weight: 700; color: #111111; margin: 0;">Stuck? Ask the AI to fix it. Still stuck? Ask Leo or Chris! 👋</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- MID-SESSION CHECK-IN (5 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 12: Check-In Pause -->
+        <div class="slide pause-slide">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🔔</div>
+            <h1 style="font-size: 3rem; color: #F57C00;">Quick Check-In</h1>
+            <div class="pause-timer">5 min</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 700px; margin: 1.5rem 0;">
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+                    <h3 style="color: #00853F; font-size: 1.2rem;">What's working?</h3>
+                </div>
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚧</div>
+                    <h3 style="color: #F57C00; font-size: 1.2rem;">What's stuck?</h3>
+                </div>
+            </div>
+
+            <div style="background: #111111; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.1rem; color: #FFFFFF; margin: 0;">Quick shout-outs from each team. Share discoveries!</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- DEPLOY (20 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 13: Deploy Your Creation -->
+        <div class="slide">
+            <h2>🚀 Quick Deploy</h2>
+            <p class="subtitle">This is fast — just 5 minutes!</p>
+
+            <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 2rem; border-radius: 16px; max-width: 700px; margin: 1.5rem 0; border: 3px solid #00853F;">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚡</div>
+                    <h3 style="color: #00853F; font-size: 1.5rem;">Vercel = Easiest Option</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                    <div style="background: white; padding: 1rem; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">1️⃣</div>
+                        <p style="font-size: 0.95rem; margin: 0;">Download your code</p>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">2️⃣</div>
+                        <p style="font-size: 0.95rem; margin: 0;">Drag & drop to Vercel</p>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">3️⃣</div>
+                        <p style="font-size: 0.95rem; margin: 0;">Get your URL! 🎉</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 40px; max-width: 600px;">
+                <p style="font-size: 1rem; margin: 0; text-align: center;">💡 <strong>Tip:</strong> Create Vercel account now at <strong>vercel.com</strong> if you haven't!</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- SHOW & TELL (15 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 14: Show & Tell -->
+        <div class="slide blue-bg">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎤</div>
+            <h1>Show & Tell</h1>
+            <p style="font-size: 1.5rem; margin: 1rem 0;">2 minutes per team — <strong>the best part!</strong></p>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; max-width: 1000px; margin: 2rem 0;">
+                <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+                    <h3 style="font-size: 1.1rem;">What Direction?</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">What angle did you take?</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+                    <h3 style="font-size: 1.1rem;">Demo It!</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">Show what you got</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚀</div>
+                    <h3 style="font-size: 1.1rem;">How Far?</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">How far did AI get you?</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">😮</div>
+                    <h3 style="font-size: 1.1rem;">Wow Moment</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">What surprised you?</p>
+                </div>
+            </div>
+
+            <div style="background: #FBD914; padding: 1rem 2rem; border-radius: 40px;">
+                <p style="font-size: 1.2rem; font-weight: 600; color: #111111; margin: 0;">Compare outcomes! Same brief → different results 🎉</p>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- CLOSE (5 min) -->
+        <!-- ======================= -->
+
+        <!-- SLIDE 15: Takeaways -->
+        <div class="slide">
+            <h2>Take This Back to Work</h2>
+
+            <div class="grid" style="max-width: 900px; margin-bottom: 2rem;">
+                <div class="box">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚡</div>
+                    <h3>Prototype Fast</h3>
+                    <p>Test ideas before big investments</p>
+                </div>
+                <div class="box">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                    <h3>Share Demos</h3>
+                    <p>Communicate with stakeholders better</p>
+                </div>
+                <div class="box">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div>
+                    <h3>Use My AI Portal</h3>
+                    <p>Safe brainstorming for IKEA work</p>
+                </div>
+                <div class="box">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧪</div>
+                    <h3>Keep Experimenting</h3>
+                    <p>Try new tools, build side projects</p>
+                </div>
+            </div>
+
+            <div style="background: #F5F5F5; padding: 1rem 2rem; border-radius: 12px; max-width: 600px;">
+                <p style="font-size: 1rem; margin: 0; text-align: center;"><strong>Tools:</strong> My AI Portal • AI Studio • v0 • Vercel</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 16: Final -->
+        <div class="slide blue-bg">
+            <div style="font-size: 5rem; margin-bottom: 1rem;" class="breathing">🚀</div>
+            <h1>You Built This!</h1>
+            <p style="font-size: 1.5rem; margin: 1.5rem 0;">From idea to live URL in 2 hours</p>
+            <p style="font-size: 1.2rem; opacity: 0.9;">No coding experience needed. Just curiosity and a good prompt.</p>
+            <div style="background: #FBD914; padding: 1.25rem 2.5rem; border-radius: 40px; margin-top: 2rem;">
+                <p style="font-size: 1.4rem; font-weight: 700; color: #111111; margin: 0;">Keep building! Keep learning! 💪</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="prev-btn" disabled>←</button>
+        <div class="slide-counter">
+            <span id="current-slide">1</span> / <span id="total-slides">16</span>
+        </div>
+        <button id="next-btn">→</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentSlideNum = document.getElementById('current-slide');
+        const totalSlidesNum = document.getElementById('total-slides');
+
+        totalSlidesNum.textContent = totalSlides;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'prev');
+                if (i === index) slide.classList.add('active');
+                else if (i < index) slide.classList.add('prev');
+            });
+            currentSlideNum.textContent = index + 1;
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === totalSlides - 1;
+        }
+
+        function nextSlide() { if (currentSlide < totalSlides - 1) { currentSlide++; showSlide(currentSlide); } }
+        function prevSlide() { if (currentSlide > 0) { currentSlide--; showSlide(currentSlide); } }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+        showSlide(0);
+    </script>
+</body>
+</html>
